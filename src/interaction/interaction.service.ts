@@ -46,4 +46,24 @@ export class InteractionService implements OnModuleInit {
   addInteraction(interaction: Interaction) {
     return this.commands.set(interaction.data.name, interaction);
   }
+
+  private async registerInteractions() {
+    const token = this.configService.getOrThrow<string>('DISCORD_BOT_TOKEN');
+    const clientId = this.configService.getOrThrow<string>('DISCORD_CLIENT_ID');
+    const guildId = this.configService.getOrThrow<string>('DISCORD_GUILD_ID');
+
+    const rest = new REST().setToken(token);
+
+    try {
+      this.logger.log(`Started refreshing ${this.commands.size} application (/) commands.`);
+
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+        body: [...this.commands.values()].map((c) => c.data.toJSON()),
+      });
+
+      this.logger.log(`Successfully reloaded ${this.commands.size} application (/) commands.`);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
 }
