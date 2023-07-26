@@ -1,14 +1,16 @@
+import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Client, Collection, Events, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
+import { InteractionService } from './interaction/interaction.service';
+
 @Injectable()
 export class AppService implements OnModuleInit {
   private discordClient: Client;
-  private readonly commands = new Collection<string, Interaction>();
   private readonly logger = new Logger(AppService.name);
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly interactionService: InteractionService,
   ) {}
 
   async onModuleInit() {
@@ -36,5 +38,11 @@ export class AppService implements OnModuleInit {
     this.discordClient.on(Events.ClientReady, () =>
       this.logger.log(`${this.discordClient.user.username} has been bootstrapped!`),
     );
-  }
 
+    this.discordClient.on(Events.InteractionCreate, async (interaction) => {
+      if (!interaction.isChatInputCommand()) return;
+
+      await this.interactionService.executeInteraction(interaction);
+    });
+  }
+}
