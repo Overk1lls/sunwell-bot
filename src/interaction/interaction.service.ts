@@ -1,7 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { ChatInputCommandInteraction, Collection, REST, Routes } from 'discord.js';
+import { requestItemCommand } from './commands';
 import { Interaction } from '../interfaces';
+import { RequestItem } from '../schemas';
 
 @Injectable()
 export class InteractionService implements OnModuleInit {
@@ -11,13 +15,22 @@ export class InteractionService implements OnModuleInit {
   constructor(
     private readonly configService: ConfigService,
 
+    @InjectModel(RequestItem.name) private readonly itemRequestModel: Model<RequestItem>,
   ) {}
 
   onModuleInit() {
     const interaction: Interaction = {
       data: requestItemCommand,
       execute: async (interaction: ChatInputCommandInteraction) => {
-        await interaction.reply('Pong!');
+        await interaction.deferReply({ ephemeral: true });
+
+        const [{ value: nickname }, { value: classSpec }, { value: item }] =
+          interaction.options.data;
+
+        const createdItemRequest = new this.itemRequestModel({ nickname, classSpec, item });
+        await createdItemRequest.save();
+
+        await interaction.editReply('Данные были сохранены!');
       },
     };
 
