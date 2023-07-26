@@ -14,6 +14,14 @@ export class InteractionService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
+    const interaction: Interaction = {
+      data: requestItemCommand,
+      execute: async (interaction: ChatInputCommandInteraction) => {
+        await interaction.reply('Pong!');
+      },
+    };
+
+    this.commands.set(interaction.data.name, interaction);
   }
 
   async executeInteraction(interaction: ChatInputCommandInteraction) {
