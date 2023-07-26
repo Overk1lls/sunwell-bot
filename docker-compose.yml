@@ -1,0 +1,19 @@
+version: '3.1'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - 27017:27017
+    restart: always
+    volumes:
+      - ~/dockerdata/mongodb:/data/db
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+    restart: always
+    depends_on:
+      - mongodb
