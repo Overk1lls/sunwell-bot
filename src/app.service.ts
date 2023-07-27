@@ -32,6 +32,7 @@ export class AppService implements OnModuleInit {
 
   async initBot() {
     const token = this.configService.getOrThrow<string>('DISCORD_BOT_TOKEN');
+    const interactionsChannelId = this.configService.getOrThrow<string>('DISCORD_GUILD_CHANNEL_ID');
 
     await this.discordClient.login(token);
 
@@ -40,9 +41,13 @@ export class AppService implements OnModuleInit {
     );
 
     this.discordClient.on(Events.InteractionCreate, async (interaction) => {
-      if (!interaction.isChatInputCommand()) return;
+      if (!interaction.isChatInputCommand() || interaction.member.user.bot) return;
 
-      await this.interactionService.executeInteraction(interaction);
+      if (interaction.channelId !== interactionsChannelId) {
+        await interaction.reply({ content: 'Я не отвечаю в этом канале', ephemeral: true });
+      } else {
+        await this.interactionService.executeInteraction(interaction);
+      }
     });
   }
 }

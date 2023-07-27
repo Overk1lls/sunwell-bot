@@ -32,6 +32,7 @@ export class InteractionService implements OnModuleInit {
         await interaction.editReply('Данные были сохранены!');
       },
     };
+
     const reqPlayersInteraction: Interaction = {
       data: requestPlayersCommand,
       execute: async (interaction) => {
@@ -41,9 +42,11 @@ export class InteractionService implements OnModuleInit {
 
         let response = 'На данный момент:\n';
 
-        for (const requestedItem of requestedItems) {
+        for (let i = 0; i < requestedItems.length; i++) {
+          const item = requestedItems[i];
+
           response = response.concat(
-            `* ${requestedItem.nickname} - ${requestedItem.classSpec} - ${requestedItem.item} (#${requestedItem._id})\n`,
+            `${i + 1}. ${item.nickname} - ${item.classSpec} - ${item.item} (\`${item._id}\`)\n`,
           );
         }
 
