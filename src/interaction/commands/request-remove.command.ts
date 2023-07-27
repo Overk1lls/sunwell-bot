@@ -17,5 +17,5 @@ export const requestRemoveItem = new SlashCommandBuilder()
       .setMinLength(2)
       .setMaxLength(15),
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages)
-  .setDMPermission(true);
+  .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+  .setDMPermission(false);
