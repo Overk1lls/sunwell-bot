@@ -35,7 +35,7 @@ export class InteractionService implements OnModuleInit {
           });
           await createdItemRequest.save();
 
-          await interaction.editReply('Данные были сохранены!');
+          await interaction.editReply(`Данные были сохранены: ${nickname} - ${classSpec} - ${item}`);
         },
       },
       {
@@ -44,6 +44,11 @@ export class InteractionService implements OnModuleInit {
           await interaction.deferReply({ ephemeral: true });
 
           const requestedItems = await this.itemRequestModel.find();
+
+          if (!requestedItems.length) {
+            await interaction.editReply('На данный момент никто ещё не запросил вещь');
+            return;
+          }
 
           let response = 'На данный момент:\n';
 

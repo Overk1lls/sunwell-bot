@@ -9,6 +9,8 @@ services:
     restart: always
     volumes:
       - ~/dockerdata/mongodb:/data/db
+    networks:
+      - app-network
 
   mongo-express:
     image: mongo-express
@@ -17,3 +19,24 @@ services:
     restart: always
     depends_on:
       - mongodb
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+    networks:
+      - app-network
+
+  sunwell-bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - mongo-express
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/sunwell
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

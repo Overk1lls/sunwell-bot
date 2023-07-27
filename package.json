@@ -1,6 +1,6 @@
 {
   "name": "sunwell-bot",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A simple bot for one of the World of Warcraft guilds to help with organizing raids",
   "author": "Yurii Overkill",
   "private": true,
