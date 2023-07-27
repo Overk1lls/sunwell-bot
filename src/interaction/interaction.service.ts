@@ -1,9 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { ChatInputCommandInteraction, Collection, REST, Routes } from 'discord.js';
-import { requestItemCommand, requestPlayersCommand } from './commands';
+import { requestItemCommand, requestPlayersCommand, requestRemoveItem } from './commands';
+import { capitalizeWord } from './interaction.utils';
 import { Interaction } from '../interfaces';
 import { RequestItem } from '../schemas';
 
@@ -18,44 +19,79 @@ export class InteractionService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    const reqItemInteraction: Interaction = {
-      data: requestItemCommand,
-      execute: async (interaction: ChatInputCommandInteraction) => {
-        await interaction.deferReply({ ephemeral: true });
+    const interactions: Interaction[] = [
+      {
+        data: requestItemCommand,
+        execute: async (interaction: ChatInputCommandInteraction) => {
+          await interaction.deferReply({ ephemeral: true });
 
-        const [{ value: nickname }, { value: classSpec }, { value: item }] =
-          interaction.options.data;
+          const [{ value: nickname }, { value: classSpec }, { value: item }] =
+            interaction.options.data;
 
-        const createdItemRequest = new this.itemRequestModel({ nickname, classSpec, item });
-        await createdItemRequest.save();
+          const createdItemRequest = new this.itemRequestModel({
+            classSpec,
+            item,
+            nickname: nickname.toString().toLowerCase(),
+          });
+          await createdItemRequest.save();
 
-        await interaction.editReply('Данные были сохранены!');
+          await interaction.editReply('Данные были сохранены!');
+        },
       },
-    };
+      {
+        data: requestPlayersCommand,
+        execute: async (interaction) => {
+          await interaction.deferReply({ ephemeral: true });
 
-    const reqPlayersInteraction: Interaction = {
-      data: requestPlayersCommand,
-      execute: async (interaction) => {
-        await interaction.deferReply({ ephemeral: true });
+          const requestedItems = await this.itemRequestModel.find();
 
-        const requestedItems = await this.itemRequestModel.find();
+          let response = 'На данный момент:\n';
 
-        let response = 'На данный момент:\n';
+          for (let i = 0; i < requestedItems.length; i++) {
+            const { _id, nickname, classSpec, item } = requestedItems[i];
 
-        for (let i = 0; i < requestedItems.length; i++) {
-          const item = requestedItems[i];
+            const capitalizedNick = capitalizeWord(nickname);
 
-          response = response.concat(
-            `${i + 1}. ${item.nickname} - ${item.classSpec} - ${item.item} (\`${item._id}\`)\n`,
+            response = response.concat(
+              `${i + 1}. ${capitalizedNick} - ${classSpec} - ${item} (\`${_id}\`)\n`,
+            );
+          }
+
+          await interaction.editReply(response);
+        },
+      },
+      {
+        data: requestRemoveItem,
+        execute: async (interaction) => {
+          await interaction.deferReply({ ephemeral: true });
+
+          const [optionOne, optionTwo] = interaction.options.data;
+
+          if (!optionOne && !optionTwo) {
+            await interaction.editReply('Для удаления нужен айди или имя игрока!');
+            return;
+          }
+
+          const { name, value } = optionOne;
+          const queryCriteria: FilterQuery<RequestItem> =
+            name === 'id'
+              ? { _id: new Types.ObjectId(value.toString()) }
+              : { nickname: value.toString().toLowerCase() };
+
+          const result = await this.itemRequestModel.findOneAndDelete(queryCriteria);
+
+          await interaction.editReply(
+            result
+              ? `Запись ${capitalizeWord(result.nickname)} была удалена`
+              : `Записи с таким параметром "${value}" не существует`,
           );
-        }
-
-        await interaction.editReply(response);
+        },
       },
-    };
+    ];
 
-    this.commands.set(reqItemInteraction.data.name, reqItemInteraction);
-    this.commands.set(reqPlayersInteraction.data.name, reqPlayersInteraction);
+    for (const interaction of interactions) {
+      this.commands.set(interaction.data.name, interaction);
+    }
   }
 
   async executeInteraction(interaction: ChatInputCommandInteraction) {
