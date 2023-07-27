@@ -4,7 +4,12 @@ export const requestItemCommand = new SlashCommandBuilder()
   .setName('request-item')
   .setDescription('Запросить какую-нибудь шмотку из босса')
   .addStringOption((option) =>
-    option.setName('nickname').setDescription('Никнейм игрока').setRequired(true).setMaxLength(15),
+    // eslint-disable-next-line
+    option
+      .setName('nickname')
+      .setDescription('Никнейм игрока')
+      .setRequired(true)
+      .setMaxLength(15),
   )
   .addStringOption((option) =>
     option

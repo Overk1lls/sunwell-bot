@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ChatInputCommandInteraction, Collection, REST, Routes } from 'discord.js';
-import { requestItemCommand } from './commands';
+import { requestItemCommand, requestPlayersCommand } from './commands';
 import { Interaction } from '../interfaces';
 import { RequestItem } from '../schemas';
 
@@ -14,12 +14,11 @@ export class InteractionService implements OnModuleInit {
 
   constructor(
     private readonly configService: ConfigService,
-
     @InjectModel(RequestItem.name) private readonly itemRequestModel: Model<RequestItem>,
   ) {}
 
   onModuleInit() {
-    const interaction: Interaction = {
+    const reqItemInteraction: Interaction = {
       data: requestItemCommand,
       execute: async (interaction: ChatInputCommandInteraction) => {
         await interaction.deferReply({ ephemeral: true });
@@ -33,8 +32,27 @@ export class InteractionService implements OnModuleInit {
         await interaction.editReply('Данные были сохранены!');
       },
     };
+    const reqPlayersInteraction: Interaction = {
+      data: requestPlayersCommand,
+      execute: async (interaction) => {
+        await interaction.deferReply({ ephemeral: true });
 
-    this.commands.set(interaction.data.name, interaction);
+        const requestedItems = await this.itemRequestModel.find();
+
+        let response = 'На данный момент:\n';
+
+        for (const requestedItem of requestedItems) {
+          response = response.concat(
+            `* ${requestedItem.nickname} - ${requestedItem.classSpec} - ${requestedItem.item} (#${requestedItem._id})\n`,
+          );
+        }
+
+        await interaction.editReply(response);
+      },
+    };
+
+    this.commands.set(reqItemInteraction.data.name, reqItemInteraction);
+    this.commands.set(reqPlayersInteraction.data.name, reqPlayersInteraction);
   }
 
   async executeInteraction(interaction: ChatInputCommandInteraction) {
