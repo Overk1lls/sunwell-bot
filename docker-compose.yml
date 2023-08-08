@@ -6,7 +6,13 @@ services:
     container_name: mongo
     ports:
       - 27017:27017
-    restart: always
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - ~/dockerdata/mongodb:/data/db
     networks:
@@ -16,11 +22,17 @@ services:
     image: mongo-express
     ports:
       - 8081:8081
-    restart: always
+    restart: unless-stopped
     depends_on:
       - mongodb
+    env_file:
+      - .env
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_AUTH_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - ME_CONFIG_MONGODB_AUTH_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD}
     networks:
       - app-network
 
@@ -33,7 +45,6 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - MONGO_URI=mongodb://mongo:27017/sunwell
     networks:
       - app-network
 

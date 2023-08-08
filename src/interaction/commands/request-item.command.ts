@@ -23,7 +23,7 @@ export const requestItemCommand = new SlashCommandBuilder()
       .setName('item')
       .setDescription('Шмотка которая вас интересует')
       .setRequired(true)
-      .setMaxLength(20),
+      .setMaxLength(100),
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages)
   .setDMPermission(false);
